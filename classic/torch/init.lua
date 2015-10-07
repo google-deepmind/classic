@@ -17,7 +17,7 @@ if not torch.Object then
     local obj = file:readObject()
     local klass = classic.getClass(obj._class)
     if klass == nil then
-      error("Loading object of class '" .. v
+      error("Loading object of class '" .. obj._class
             .. "', but no such class has been registered.")
     end
     self._class = klass
