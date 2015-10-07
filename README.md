@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/deepmind/classic.svg?branch=master)](https://travis-ci.org/deepmind/classic)
+
 # classic - Class and module system for Lua.
 
 `classic` is a simple class system for Lua.
