@@ -18,6 +18,7 @@ before_script:
 - cd ..
 - cd ..
 - export LD_LIBRARY_PATH=${INSTALL_PREFIX}/lib:$LD_LIBRARY_PATH
+- export LUA_PATH="${INSTALL_PREFIX}/share/lua/5.1/?.lua;${INSTALL_PREFIX}/share/lua/5.1/?/init.lua;;"
 script:
 - ${INSTALL_PREFIX}/bin/luarocks make rocks/classic-scm-1.rockspec
 - ${INSTALL_PREFIX}/bin/luajit -lclassic classic/tests/class/test_without_torch.lua

@@ -10,7 +10,7 @@ source = {
     branch = 'master'
 }
 
-dependencies = { }
+dependencies = { "torch >= 7.0", "totem" }
 
 build = {
     type = 'builtin',
