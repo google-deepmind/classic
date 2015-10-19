@@ -9,7 +9,7 @@ end
 
 --[[ Modules should be lower_case_with_underscores. ]]
 local function validModuleName(name)
-  return name:match('^[%l_]+$')
+  return name:match('^[%l_][%l%d_]*$')
 end
 
 --[[ Functions should be lowerCaseCamelCase. ]]
