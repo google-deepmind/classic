@@ -389,7 +389,8 @@ function test_common.generateTests(tester)
   end
 
   function tests.withDoFile()
-    local file = 'classic/tests/class/do_file_test_class.lua'
+    local file =
+        'classic/tests/class/do_file_test_class.lua'
 
     local doFileTestClass = dofile(file)
     doFileTestClass(1)

@@ -1,7 +1,7 @@
 local totem = require 'totem'
 local classic = require 'classic'
 local tester = totem.Tester()
-local tests = {}
+local tests = totem.TestSuite()
 
 local function simpleModule()
   local A = classic.class("simple_module.A")
