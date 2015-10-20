@@ -181,8 +181,8 @@ definition will be set to the require name: 'my_project'.
 This pattern both ensures that your module's name is set correctly, and
 saves you typing it lots of times.
 
-The name of the local variable you use when defining the module does not actually
-matter - so you could equally well write:
+The name of the local variable you use when defining the module does not
+actually matter - so you could equally well write:
 
 ```lua
 local classic = require 'classic'
