@@ -478,6 +478,61 @@ function test_common.generateTests(tester)
     classic.deregisterAllClasses()
   end
 
+  function tests.final()
+    local A = classic.class("A")
+    tester:assertErrorPattern(function() A:final('foo') end, "declared",
+                              "trying to declare non-existent method final")
+    tester:assertNoError(
+        function()
+          function A:foo() end
+          A:final('foo')
+        end, "defining final method")
+    tester:assertErrorPattern(function() function A:foo() end end, "final",
+                              "overriding final method in base")
+    tester:assert(A:methodIsFinal('foo'), 'method should be final')
+
+    local B = classic.class("B", A)
+    tester:assertErrorPattern(function() function B:foo() end end, "final",
+                              "trying to override final method in child")
+    tester:assertNoError(function() function B:bar() end end,
+                         "defining method in child")
+    tester:assert(not B:methodIsFinal('bar'), 'method should not be final yet')
+    B:final('bar')
+    tester:assert(B:methodIsFinal('foo'), 'method should be final')
+    tester:assert(B:methodIsFinal('bar'), 'method should be final')
+
+    local C = classic.class("C", B)
+    tester:assertErrorPattern(function() function C:foo() end end, "final",
+                              "trying to override final method in grandchild")
+    tester:assertErrorPattern(function() function C:bar() end end, "final",
+                              "trying to override final method in child")
+    tester:assertNoError(function() function C:baz() end end,
+                         "defining non-final method")
+
+    tester:assert(C:methodIsFinal('foo'), 'method should be final')
+    tester:assert(C:methodIsFinal('bar'), 'method should be final')
+    tester:assert(not C:methodIsFinal('baz'), 'method should not be final')
+
+    local D = classic.class("D")
+    D:include(C)
+    tester:assertErrorPattern(function() function D:foo() end end, "final",
+                              "trying to override final method from mixin")
+    tester:assertErrorPattern(function() function D:bar() end end, "final",
+                              "trying to override final method from mixin")
+    tester:assertNoError(function() function D:baz() end end,
+                         "overriding non-final method")
+
+    tester:assert(D:methodIsFinal('foo'), 'method should be final')
+    tester:assert(D:methodIsFinal('bar'), 'method should be final')
+    tester:assert(not D:methodIsFinal('baz'), 'method should not be final')
+    D:final('baz')
+    tester:assert(D:methodIsFinal('baz'), 'method should be final')
+    tester:assertErrorPattern(function() D:final() end, "string",
+                              "call final with no arg")
+
+    classic.deregisterAllClasses()
+  end
+
   return tests
 end
 

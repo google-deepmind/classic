@@ -1,5 +1,20 @@
 local classic = assert(classic, 'metaclass should not be required directly')
 
+-- Argument checking: check that self was correctly passed.
+local function checkSelf(self, name)
+  if type(self) ~= 'table' then
+    error(name .. "() must be called on a class. Did you forget the colon?", 3)
+  end
+end
+
+-- Argument checking: check that a string argument was correctly passed.
+local function checkStringArg(str, name)
+  if type(str) ~= 'string' then
+    error(name .. "() expects a string argument, but got "
+          .. tostring(type(str)) .. ".", 3)
+  end
+end
+
 local Class = {}
 
 --[[ Creates a new Class object.
@@ -17,6 +32,7 @@ Returns: a new classic class.
 function Class:_init(name, parent)
   local methods = {}
   local requiredMethods = {}
+  local finalMethods = {}
   local classAttributes = {}
   local staticMethods = {}
 
@@ -72,16 +88,24 @@ function Class:_init(name, parent)
   rawset(self, '_methods', methods)
   rawset(self, '_classAttributes', classAttributes)
   rawset(self, '_requiredMethods', requiredMethods)
+  rawset(self, '_finalMethods', finalMethods)
   rawset(self, 'static', staticMethods)
 
+  -- Apply inheritance if necessary.
   if parent ~= nil then
+    -- Copy instance methods from parent to the new class.
     for name, func in pairs(rawget(parent, '_methods')) do
       if methods[name] == nil then
         methods[name] = func
       end
     end
+    -- Inherit any 'mustHave' settings.
     for _, methodName in ipairs(rawget(parent, '_requiredMethods')) do
       table.insert(requiredMethods, methodName)
+    end
+    -- Inherit any 'final' settings.
+    for methodName, _ in pairs(rawget(parent, '_finalMethods')) do
+      finalMethods[methodName] = true
     end
   end
 
@@ -247,16 +271,56 @@ Returns: none.
 
 ]]
 function Class:mustHave(methodName)
-  if type(self) ~= 'table' then
-    error("mustHave() must be called on a class. Did you forget the colon?", 2)
-  end
-  if type(methodName) ~= 'string' then
-    error("mustHave() expects a string argument, but got "
-          .. tostring(type(methodName)) .. ".", 2)
-  end
+  checkSelf(self, 'mustHave')
+  checkStringArg(methodName, 'mustHave')
   local requiredMethods = rawget(self, '_requiredMethods')
   table.insert(requiredMethods, methodName)
 end
+
+--[[ Mark a method as 'final'.
+
+This can be used during class definition to indicate that a particular method
+should *not* be overridden by subclasses, or in classes that include this class
+as a mixin.
+
+Any subsequent attempt to do so will trigger an error.
+
+Arguments:
+
+ * `methodName` - Lua string containing a valid method name.
+
+Returns: none.
+
+]]
+function Class:final(methodName)
+  checkSelf(self, 'final')
+  checkStringArg(methodName, 'final')
+
+  local methods = rawget(self, '_methods')
+  if methods[methodName] == nil then
+    error("attempted to mark method '" .. methodName ..
+          "' as final, but no method of that name has been declared yet.", 2)
+  end
+  local finalMethods = rawget(self, '_finalMethods')
+  finalMethods[methodName] = true
+end
+
+--[[ Check whether a given method name is marked as 'final'.
+
+Arguments:
+
+ * `methodName` - Lua string containing a valid method name.
+
+Returns: boolean; true if the method name is final, and false otherwise.
+
+]]
+function Class:methodIsFinal(methodName)
+  checkSelf(self, 'methodIsFinal')
+  checkStringArg(methodName, 'methodIsFinal')
+  local finalMethods = rawget(self, '_finalMethods')
+  return finalMethods[methodName] ~= nil
+end
+
 
 --[[ Return a table of methods for this class.
 
@@ -269,9 +333,7 @@ Returns: Lua table, mapping from method name to function.
 
 ]]
 function Class:methods()
-  if type(self) ~= 'table' then
-    error("methods() must be called on a class. Did you forget the colon?")
-  end
+  checkSelf(self, 'methods')
   local methods = {}
   for name, func in pairs(self._methods) do
     if type(func) == 'function' and string.sub(name, 1, 1) ~= "_"
@@ -306,9 +368,7 @@ Returns: a new object, whose type is this class.
 
 ]]
 function Class:instantiate(...)
-  if type(self) ~= 'table' then
-    error("instantiate() must be called on a class. Did you forget the colon?")
-  end
+  checkSelf(self, 'instantiate')
   assert(self ~= nil, "badly formed constructor call")
 
   local parent = rawget(self, '_parent')
@@ -367,6 +427,14 @@ function Class:include(klass)
   for _, name in pairs(otherRequiredMethods) do
     table.insert(requiredMethods, name)
   end
+
+  -- Methods marked final should also be final in the including class.
+  local finalMethods = rawget(self, '_finalMethods')
+  local otherFinalMethods = rawget(klass, '_finalMethods')
+  for name, _ in pairs(otherFinalMethods) do
+    finalMethods[name] = true
+  end
+
 end
 
 --[[ Check whether the class is abstract.
@@ -457,7 +525,17 @@ function Metaclass.__newindex(self, name, value)
   if name == '__init' or name == 'init' then
     error("did you mean _init?")
   end
-  rawset(rawget(self, '_methods'), name, value)
+
+  -- Check that we're not trying to override a final method.
+  local parent = rawget(self, '_parent')
+  local methods = rawget(self, '_methods')
+  if (parent and parent:methodIsFinal(name)) or
+      (self:methodIsFinal(name) and rawget(methods, name) ~= nil) then
+    error("Attempted to define method '" .. name .. "' in class '" ..
+          self._name .. "', but '" .. name .. "' is marked as final.", 2)
+  end
+
+  rawset(methods, name, value)
   classic._notify(classic.events.CLASS_DEFINE_METHOD, self, name, value)
 end
 

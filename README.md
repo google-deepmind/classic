@@ -146,6 +146,73 @@ end
 print(A.myStaticMethod(3))
 ```
 
+### 'mustHave' methods
+
+When defining an abstract base class, which relies on the presence of certain
+methods but does not provide any implementation for them, it can be useful to
+mark these methods as being required to be implemented by inheriting classes.
+
+This is akin to pure virtual methods in C++, or an interface in Java.
+
+In classic, marking a method as `mustHave()` in a class will cause an error to
+be thrown when that class, or descendants, are instantiated - if the method has
+not been implemented. This feature can also be used in mixins.
+
+```lua
+local classic = require 'classic'
+
+local A = classic.class("A")
+
+A:mustHave("essentialMethod")
+
+function A:getResult()
+  return self:essentialMethod() + 1
+end
+
+local B = classic.class("B", A)
+
+function B:essentialMethod()
+  return 2
+end
+
+-- OK: method is implemented.
+local b = B()
+
+local C = classic.class("C", A)
+
+-- Error: 'essentialMethod' is marked 'mustHave' but was not implemented.
+local c = C()
+```
+
+### 'final' methods
+
+It can also be useful to indicate that a particular method should *not* be
+overridden by subclasses. This is done using `final()`.
+
+Any attempt to override a final method in a subclass will trigger an error.
+
+Methods can also be marked as final in mixins.
+
+You may only mark a method as final *after* it has been defined.
+
+```lua
+local classic = require 'classic'
+
+local A = classic.class("A")
+
+function A:finalMethod()
+  print("This should not be meddled with!")
+end
+A:final("finalMethod")
+
+local B = classic.class("B", A)
+
+-- Error: this override is no longer permitted.
+function B:finalMethod()
+  print("Attempted meddling!")
+end
+```
+
 ### Modules
 
 As well as the class system, classic has a way of defining modules.
