@@ -1,5 +1,87 @@
 classic = {}
 local torch = require 'torch'
+
+--[[ This is the list of events that can be hooked into by callbacks.
+
+Call `classic.addCallback()` if you want to be notified when one of these
+happens.
+
+]]
+classic.events = {
+    -- A new class is initialized. Callback is passed the name.
+    CLASS_INIT = 1,
+
+    -- An attribute is first set in a class. Callback is passed the class object
+    -- and the attribute name and value.
+    CLASS_SET_ATTRIBUTE = 2,
+
+    -- A method is defined in a class. Callback is passed the class object and
+    -- the method name and function.
+    CLASS_DEFINE_METHOD = 3,
+
+    -- A new module is initialized. Callback is passed the module name.
+    MODULE_INIT = 4,
+
+    -- A class is added to a module. Callback is passed the module object and
+    -- class name.
+    MODULE_DECLARE_CLASS = 5,
+
+    -- A submodule is added to a module. Callback is passed the module object
+    -- and submodule name.
+    MODULE_DECLARE_SUBMODULE = 6,
+
+    -- A function is added to a module. Callback is passed the module object and
+    -- function name.
+    MODULE_DECLARE_FUNCTION = 7,
+
+    -- classic.torch is enabled. Callback is not passed anything.
+    CLASSIC_TORCH_ENABLED = 8,
+}
+setmetatable(classic.events, {
+    __index = function(t, k) error(k .. " is not a valid classic event!") end})
+classic._callbacks = {}
+
+--[[ Register a callback function to be called whenever some particular event
+occurs in classic.
+
+This can be used to extend the functionality of classic to fit your needs. For
+instance, you might want to log particular events, for debugging, or enforce a
+certain way of naming classes.
+
+Arguments:
+* `event` - an event ID, from the `classic.events` table.
+* `func` - a callback function. The arguments it is passed depend on the event.
+
+]]
+function classic.addCallback(event, func)
+  assert(event and type(event) == 'number',
+         "classic.addCallback() requires an event ID as its first argument.")
+  assert(func and type(func) == 'function',
+         "classic.addCallback() requires a callback function as its second " ..
+         "argument.")
+  if classic._callbacks[event] == nil then
+    classic._callbacks[event] = {}
+  end
+  table.insert(classic._callbacks[event], func)
+end
+
+--[[ Call any registered callbacks for the specified event, passing in the given
+arguments.
+
+Arguments:
+
+* `event` - an event ID, from the `classic.events` table.
+* `...` - additional arguments to be passed to the callbacks.
+
+]]
+function classic._notify(event, ...)
+  if classic._callbacks[event] then
+    for _, callback in ipairs(classic._callbacks[event]) do
+      callback(...)
+    end
+  end
+end
+
 local Class = require 'classic.Class'
 local Module = require 'classic.Module'
 

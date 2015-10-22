@@ -5,6 +5,8 @@ require 'torch'
 local classic = assert(classic,
                        "classic.torch may not be required before classic.")
 
+classic._notify(classic.events.CLASSIC_TORCH_ENABLED)
+
 classic._torchCompatibility = true
 
 if not torch.Object then

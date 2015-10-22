@@ -218,8 +218,6 @@ Arguments: none.
 
 Returns: Lua string; as described above.
 
-TODO(horgan): use some proper hash function.
-
 ]]
 function Class:hash()
   local hashes = {}
@@ -450,6 +448,7 @@ function Metaclass.__newindex(self, name, value)
   -- If it's not a function, it's a class attribute.
   if type(value) ~= 'function' then
     rawget(self, '_classAttributes')[name] = value
+    classic._notify(classic.events.CLASS_SET_ATTRIBUTE, self, name, value)
   end
 
   -- Otherwise, we're defining an instance method (the normal case).
@@ -459,6 +458,7 @@ function Metaclass.__newindex(self, name, value)
     error("did you mean _init?")
   end
   rawset(rawget(self, '_methods'), name, value)
+  classic._notify(classic.events.CLASS_DEFINE_METHOD, self, name, value)
 end
 
 --[[ String representation of the class object. ]]
@@ -502,6 +502,8 @@ setmetatable(Class, {
     local klass = {}
     setmetatable(klass, Metaclass)
     Class._init(klass, name, parent or nil)
+
+    classic._notify(classic.events.CLASS_INIT, name)
     return klass
   end
 

@@ -18,89 +18,6 @@ local function simpleModule()
   return module, A, B
 end
 
-function tests.naming()
-  local function checkInvalidModuleName(name)
-    tester:assertErrorPattern(function() classic.module(name) end, "not valid")
-  end
-  local function checkInvalidSubmoduleName(name)
-    tester:assertErrorPattern(
-        function()
-          local module = classic.module("test_module")
-          module:submodule(name)
-        end,
-        "Module names should be lower_case_with_underscores:")
-  end
-  local badModuleNames = {
-      "123",
-      "my_module!",
-      "My Module",
-      "my_moduleA",
-      "MyModule",
-      "my module",
-      "myModule",
-      "",
-      "module.Submodule",
-      "Module.submodule"
-  }
-
-  for _, name in ipairs(badModuleNames) do
-    checkInvalidModuleName(name)
-    checkInvalidSubmoduleName(name)
-  end
-  tester:assertErrorPattern(function() classic.module() end,
-                            "Module name")
-
-
-  local function checkInvalidClassName(name)
-    tester:assertErrorPattern(
-        function()
-          local module = classic.module("test_module")
-          module:class(name)
-        end,
-        "Class names should be UpperCaseCamelCase:")
-  end
-
-  local badClassNames = {
-      "my_class",
-      "myClass",
-      "My_class",
-      "MY_CLASS",
-      "MY_CLASS",
-      "Classy!",
-      "Classy?",
-      "My Class",
-      "My.Class",
-  }
-  for _, name in ipairs(badClassNames) do
-    checkInvalidClassName(name)
-  end
-  tester:assertErrorPattern(
-      function()
-        local m = classic.module("test_module")
-        m:class()
-      end,
-      "Class name")
-
-  local function checkInvalidFunctionName(name)
-    tester:assertErrorPattern(
-        function()
-          local module = classic.module("test_module")
-          module:moduleFunction(name)
-        end,
-        "Function name", "lazy declaration: " .. tostring(name))
-  end
-
-  local badFunctionNames = {
-      "my_function",
-      "MyFunction",
-      "myFunction!",
-      "my.function"
-  }
-  for _, name in ipairs(badFunctionNames) do
-    checkInvalidFunctionName(name)
-  end
-  checkInvalidFunctionName(nil)
-end
 
 function tests.simple()
   local module, A, B = simpleModule()
@@ -138,26 +55,35 @@ function tests.simple()
 
 end
 
-function tests.badNames()
-  local module = classic.module("a")
-  tester:assertErrorPattern(
-      function() module:class() end,
-      "Class name", "class name missing should error")
-  tester:assertErrorPattern(
-      function() module:class(3) end,
-      "Class name", "number as class name should error")
-  tester:assertErrorPattern(
-      function() module:submodule() end,
-      "Submodule name", "submodule name missing should error")
-  tester:assertErrorPattern(
-      function() module:submodule(3) end,
-      "Submodule name", "number as submodule name should error")
-  tester:assertErrorPattern(
-      function() module:moduleFunction() end,
-      "Function name", "module function name missing should error")
-  tester:assertErrorPattern(
-      function() module:moduleFunction(3) end,
-      "Function name", "number as function name should error")
+
+function tests.callbacks()
+  local gotName = nil
+  local gotClassName = nil
+  local gotSubmoduleName = nil
+  local gotFunctionName = nil
+  local function initCallback(name) gotName = name end
+  classic.addCallback(classic.events.MODULE_INIT, initCallback)
+  local M = classic.module("my_module")
+  tester:asserteq(gotName, "my_module")
+  tester:asserteq(gotClassName, nil)
+  local function classCallback(module, name) gotClassName = name end
+  classic.addCallback(classic.events.MODULE_DECLARE_CLASS, classCallback)
+  M:class("MyClass")
+  tester:asserteq(gotClassName, "MyClass")
+  local function submoduleCallback(module, name) gotSubmoduleName = name end
+  classic.addCallback(classic.events.MODULE_DECLARE_SUBMODULE,
+                      submoduleCallback)
+  tester:asserteq(gotSubmoduleName, nil)
+  M:submodule("my_submodule")
+  tester:asserteq(gotSubmoduleName, "my_submodule")
+  tester:assertErrorPattern(function() return classic.events.BLAH_BLAH end,
+                            "classic event", "invalid event should error")
+  local function functionCallback(module, name) gotFunctionName = name end
+  classic.addCallback(classic.events.MODULE_DECLARE_FUNCTION,
+                      functionCallback)
+  tester:asserteq(gotFunctionName, nil)
+  M:moduleFunction("myFunction")
+  tester:asserteq(gotFunctionName, "myFunction")
 end
 
 return tester:add(tests):run()

@@ -277,3 +277,21 @@ and in client code:
 local my_project = require 'path.to.MyModule'
 local obj = my_project.MyClass{x = 1}
 ```
+
+### Callbacks
+
+You can register your own functions to be called when classic does various
+things. For instance, for debugging purposes you might want to be notified every
+time a class is defined.
+
+```lua
+local classic = require 'classic'
+classic.addCallback(classic.events.CLASS_INIT, function(name)
+  print("A class was defined: ", name)
+end)
+```
+
+See the table in `classic/init.lua` for the full list of events that you can use
+to trigger callbacks, and the details of what the callback functions will be
+passed.
+

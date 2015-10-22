@@ -456,6 +456,28 @@ function test_common.generateTests(tester)
     classic.deregisterAllClasses()
   end
 
+  function tests.callbacks()
+    local gotName = nil
+    local gotAttribute = nil
+    local gotMethod = nil
+    local function initCallback(name) gotName = name end
+    local function attributeCallback(klass, name) gotAttribute = name end
+    local function methodCallback(klass, name) gotMethod = name end
+    classic.addCallback(classic.events.CLASS_INIT, initCallback)
+    classic.addCallback(classic.events.CLASS_SET_ATTRIBUTE, attributeCallback)
+    classic.addCallback(classic.events.CLASS_DEFINE_METHOD, methodCallback)
+    tester:asserteq(gotName, nil)
+    tester:asserteq(gotAttribute, nil)
+    tester:asserteq(gotMethod, nil)
+    local MyClass = classic.class("MyClass")
+    tester:asserteq(gotName, "MyClass")
+    MyClass.myAttr = 2
+    tester:asserteq(gotAttribute, "myAttr")
+    function MyClass:myMethod() end
+    tester:asserteq(gotMethod, "myMethod")
+    classic.deregisterAllClasses()
+  end
+
   return tests
 end
 

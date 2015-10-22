@@ -2,32 +2,6 @@
 
 local Module = {}
 
---[[ Classes should be UpperCaseCamelCase. ]]
-local function validClassName(name)
-  return name:match('^%u[%a%d]*$')
-end
-
---[[ Modules should be lower_case_with_underscores. ]]
-local function validModuleName(name)
-  return name:match('^[%l_][%l%d_]*$')
-end
-
---[[ Functions should be lowerCaseCamelCase. ]]
-local function validFunctionName(name)
-  return name:match('^[%l_][%a%d]*$')
-end
-
---[[ A fully-qualified module name should be a series of valid module names,
-separated by '.' characters. ]]
-local function validFullyQualifiedModuleName(name)
-  for part in string.gmatch(name, "[^%.]+") do
-    if not validModuleName(part) then
-      return false
-    end
-  end
-  return name ~= ""
-end
-
 --[[ Creates a module of the given name.
 
 Arguments:
@@ -45,9 +19,7 @@ Example:
     return M
 ]]
 function Module:_init(name)
-  if not validFullyQualifiedModuleName(name) then
-    error("Module name is not valid: " .. name, 3)
-  end
+  classic._notify(classic.events.MODULE_INIT, name)
   rawset(self, '_name', name)
   rawset(self, '_submodules', {})
   rawset(self, '_classes', {})
@@ -77,10 +49,7 @@ function Module:submodule(name)
   if self._submodules[name] ~= nil then
     error("Already declared submodule " .. name .. ".", 2)
   end
-  if not validModuleName(name) then
-    error("Module names should be lower_case_with_underscores: " .. name .. ".",
-          2)
-  end
+  classic._notify(classic.events.MODULE_DECLARE_SUBMODULE, self, name)
   self._submodules[name] = true
 end
 
@@ -101,9 +70,7 @@ function Module:class(name)
   if self._classes[name] ~= nil then
     error("Already declared class " .. name .. ".", 2)
   end
-  if not validClassName(name) then
-    error("Class names should be UpperCaseCamelCase: " .. name, 2)
-  end
+  classic._notify(classic.events.MODULE_DECLARE_CLASS, self, name)
   self._classes[name] = true
 end
 
@@ -124,9 +91,7 @@ function Module:moduleFunction(name)
   if self._moduleFunctions[name] ~= nil then
     error("Already declared module function " .. name .. ".", 2)
   end
-  if not validFunctionName(name) then
-    error("Function names should be lowerCaseCamelCase: " .. name .. ".", 2)
-  end
+  classic._notify(classic.events.MODULE_DECLARE_FUNCTION, self, name)
   self._moduleFunctions[name] = true
 end
 
