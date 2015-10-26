@@ -67,8 +67,40 @@ if not torch.Object then
     if name == 'write' then
       return Object.write
     end
+    -- Handle user __index method, if present.
     local klass = assert(rawget(self, '_class'), "missing _class")
-    return rawget(klass, '_methods')[name]
+    local methods = rawget(klass, '_methods')
+    local method = methods[name]
+    if method == nil and methods.__index ~= nil then
+      return methods.__index(self, name)
+    end
+
+    -- If strictness enabled, and value is missing, throw an error.
+    if rawget(self, '__classic_strict') and method == nil then
+      error("Strictness violation: cannot access '" .. name ..
+            "' on object of type " .. tostring(rawget(klass, '_name')), 2)
+    end
+    return method
+  end
+  function Object:__newindex(name, value)
+    -- Handle user __newindex method, if present.
+    local klass = rawget(self, '_class')
+    if klass then
+      local methods = rawget(klass, '_methods')
+      if methods.__newindex then
+        return methods.__newindex(self, name, value)
+      end
+    end
+
+    -- If strictness enabled, throw an error.
+    if rawget(self, '__classic_strict') then
+      local klass = assert(rawget(self, '_class'), "missing _class")
+      error("Strictness violation: cannot access '" .. name ..
+            "' on object of type " .. tostring(rawget(klass, '_name')), 2)
+    end
+
+    -- Otherwise, just set the value normally.
+    rawset(self, name, value)
   end
   function Object:__call__(...)
     local klass = assert(rawget(self, '_class'), "missing _class")

@@ -213,6 +213,49 @@ function B:finalMethod()
 end
 ```
 
+### Metamethods
+
+It is possible to define special methods that override certain operators for an
+object. Rather than manually setting the metatable, as you would do if you
+weren't using classic, you simply define appropriately named methods in your
+class.
+
+```lua
+
+local classic = require 'classic'
+
+local A = classic.class("A")
+
+function A:__index(name)
+  -- custom index method
+end
+
+function A:__call(arg1, arg2)
+  return self[arg1] + arg2
+end
+
+-- ...
+
+```
+
+Metamethods that can be set in this way include:
+
+ * `__add` - addition operator.
+ * `__call` - function call.
+ * `__concat` - concatenation (`..`) operator.
+ * `__div` - division operator.
+ * `__index` - key lookup. (`obj[key]`)
+ * `__mul` - multiplication operator.
+ * `__newindex` - set value corresponding to a key. (`obj[key] = x`)
+ * `__pow` - exponentiation operator.
+ * `__sub` - subtraction operator.
+ * `__tostring` - string conversion.
+ * `__unm` - unary minus operator.
+ * `__write` - Torch serialization hook.
+ * `__read` - Torch serialization hook.
+
+Please consult the Lua/Torch documentation as appropriate, for further details.
+
 ### Modules
 
 As well as the class system, classic has a way of defining modules.

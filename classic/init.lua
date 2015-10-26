@@ -195,7 +195,8 @@ function classic.strict(object, ...)
   end
   assert(object ~= nil, "classic.strict is missing an object to make strict")
   if classic._torchCompatibility then
-    error("classic.strict() does not work with torch compatibility.")
+    rawset(object, '__classic_strict', true)
+    return
   end
   assert(classic.isObject(object), "classic.strict only works on classic " ..
                                    "objects")
@@ -388,18 +389,35 @@ function classic._init()
   classic._torchCompatibility = false
 
   classic._createObject = function(klass)
+
+    local methods = klass._methods
+    local index = methods
+
+    -- Handle user-provided __index function, if present.
+    local indexFunc = methods.__index
+    if indexFunc then
+      index = function(tbl, name)
+        local method = methods[name]
+        if method ~= nil then
+          return method
+        end
+        return indexFunc(tbl, name)
+      end
+    end
+
     local obj = {}
     setmetatable(obj, {
-      __index = klass._methods,
-      __call = klass._methods.__call,
-      __tostring = klass._methods.__tostring,
       __add = klass._methods.__add,
-      __sub = klass._methods.__sub,
-      __mul = klass._methods.__mul,
-      __div = klass._methods.__div,
-      __pow = klass._methods.__pow,
-      __unm = klass._methods.__unm,
+      __call = klass._methods.__call,
       __concat = klass._methods.__concat,
+      __div = klass._methods.__div,
+      __index = index,
+      __mul = klass._methods.__mul,
+      __newindex = klass._methods.__newindex,
+      __pow = klass._methods.__pow,
+      __sub = klass._methods.__sub,
+      __tostring = klass._methods.__tostring,
+      __unm = klass._methods.__unm,
     })
     return obj
   end

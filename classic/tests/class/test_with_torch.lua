@@ -15,7 +15,6 @@ function tests.torchTypename()
   local A = definitions.basicClass()
   local a = A("hello")
   tester:asserteq(torch.typename(a), "torch.Object", 'bad torch.typename')
-  classic.deregisterAllClasses()
 end
 
 function tests.torchSerializable()
@@ -32,7 +31,6 @@ function tests.torchSerializable()
                     'class():name() should work on reload')
     tester:asserteq(loaded:class(), A, 'class() should return correct class')
   end)
-  classic.deregisterAllClasses()
 end
 
 function tests.torchSerializableComposition()
@@ -56,7 +54,6 @@ function tests.torchSerializableComposition()
     tester:asserteq(loaded:getX():class(), A,
                     'getX():class() should work on reload')
   end)
-  classic.deregisterAllClasses()
 end
 
 function tests.torchSerializableInheritance()
@@ -91,7 +88,6 @@ function tests.torchSerializableInheritance()
     tester:asserteq(loadedA:class():parent(), Base, "parent should be correct")
     tester:asserteq(loadedB:class():parent(), Base, "parent should be correct")
   end)
-  classic.deregisterAllClasses()
 end
 
 function tests.torchSerializableDifferentClassInstance()
@@ -113,7 +109,6 @@ function tests.torchSerializableDifferentClassInstance()
                     'class():name() should work on reload')
     tester:asserteq(loaded:class(), A, 'class() should return correct class')
   end)
-  classic.deregisterAllClasses()
 end
 
 function tests.torchSerializationReadWriteOverrides()
@@ -141,10 +136,6 @@ function tests.torchSerializationReadWriteOverrides()
     local restored = torch.load(filename)
     tester:asserteq(restored.state, 'restored')
   end)
-  classic.deregisterAllClasses()
 end
-
--- TODO(horgan): get strict working with torch compatibility
-tests.strict = nil
 
 return tester:add(tests):run()

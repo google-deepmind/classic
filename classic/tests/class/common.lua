@@ -22,7 +22,11 @@ local test_common = {}
 
 function test_common.generateTests(tester)
 
-  local tests = {}
+  local tests = totem.TestSuite()
+
+  function tests._setUp()
+    classic.deregisterAllClasses()
+  end
 
   function tests.testDefaultConstructor()
     local A = definitions.withDefaultConstructor()
@@ -31,7 +35,6 @@ function test_common.generateTests(tester)
                          "default constructor should work")
     tester:assertne(a, nil, "object should not be nil")
     tester:asserteq(a:getValue(), 1, "method should work")
-    classic.deregisterAllClasses()
   end
 
   function tests.basicFunctionality()
@@ -83,8 +86,6 @@ function test_common.generateTests(tester)
     for k = 1, 10 do
       tester:asserteq(as[k]:getX(), k, "bad attribute with multiple instances")
     end
-
-    classic.deregisterAllClasses()
   end
 
   function tests.checkBadCalls()
@@ -102,7 +103,6 @@ function test_common.generateTests(tester)
                               "classic:strict() should error")
     tester:assertErrorPattern(function() classic.strict() end, "missing",
                               "classic.strict(nil) should error")
-    classic.deregisterAllClasses()
   end
 
   function tests.inheritance()
@@ -130,7 +130,6 @@ function test_common.generateTests(tester)
     tester:assert(ChildA:isSubclassOf(ChildA), "isSubclassOf should work")
     tester:assert(ChildB:isSubclassOf(ChildB), "isSubclassOf should work")
 
-    classic.deregisterAllClasses()
   end
 
   function tests.inheritanceWithString()
@@ -152,7 +151,6 @@ function test_common.generateTests(tester)
     tester:assert(not classic.isClass(a), "isClass should work")
     tester:assert(not classic.isClass({}), "isClass should work")
 
-    classic.deregisterAllClasses()
   end
 
   function tests.repeatedDefinitions()
@@ -175,7 +173,6 @@ function test_common.generateTests(tester)
         function() definitions.similarClass() end,
         ".*defining.*",
         "declaring different class with same name should fail")
-    classic.deregisterAllClasses()
   end
 
   function tests.reflection()
@@ -183,7 +180,6 @@ function test_common.generateTests(tester)
     local a = A("x")
     local methods = A:methods()
     tester:assertne(methods['getX'], nil, "methods() did not work")
-    classic.deregisterAllClasses()
   end
 
   function tests.strict()
@@ -219,7 +215,6 @@ function test_common.generateTests(tester)
     tester:asserteq(b.nonesuch, 4,
         "undeclared attribute should work")
 
-    classic.deregisterAllClasses()
   end
 
   function tests.abstractClass()
@@ -235,7 +230,6 @@ function test_common.generateTests(tester)
     tester:assertError(function() BadSubclass() end,
     "instantiate bad subclass should throw error")
 
-    classic.deregisterAllClasses()
   end
 
   function tests.doNotPolluteGlobals()
@@ -247,14 +241,12 @@ function test_common.generateTests(tester)
       table.concat(pollutedGlobals, ","),
       ")"
     })
-    classic.deregisterAllClasses()
   end
 
   function tests.mixins()
     local A, M = definitions.classWithMixin()
     local a = A("y")
     tester:asserteq(a:getY(), "y", "mixin method should work")
-    classic.deregisterAllClasses()
   end
 
   function tests.twoLevelHierarchy()
@@ -271,7 +263,6 @@ function test_common.generateTests(tester)
       tester:asserteq(b:getY(), y, "y is wrong in child")
       tester:asserteq(c:getY(), y, "y is wrong in grandchild")
       tester:asserteq(c:getZ(), z, "z is wrong in grandchild")
-      classic.deregisterAllClasses()
   end
 
   function tests.dispatchToSubclass()
@@ -289,7 +280,6 @@ function test_common.generateTests(tester)
       local a3 = SubA(b3)
       a3:register(a3.B)
       tester:asserteq(b3:callme(), "Child; SubA")
-      classic.deregisterAllClasses()
   end
 
   function tests.call()
@@ -300,7 +290,56 @@ function test_common.generateTests(tester)
     end
     local a = A()
     tester:asserteq(a(2), VALUE + 2, "__call does not work")
-    classic.deregisterAllClasses()
+  end
+
+  function tests.index()
+    local VALUE = 1
+    local called = false
+    local A = classic.class("A")
+    function A:_init(x)
+      self.x = x
+    end
+    function A:__index(name)
+      called = true
+      return name .. tostring(VALUE + self.x)
+    end
+    function A:baz()
+      return "here"
+    end
+    local a1 = A(1)
+    local a2 = A(2)
+    tester:asserteq(a1['foo'], "foo2")
+    tester:assert(called)
+    tester:asserteq(a1['bar'], "bar2")
+    tester:asserteq(a2['foo'], "foo3")
+    tester:asserteq(a2['bar'], "bar3")
+    tester:asserteq(a1:baz(), "here")
+  end
+
+  function tests.newindex()
+    local A = classic.class("A")
+    local called = false
+    function A:_init()
+      rawset(self, 'secret', {})
+    end
+    function A:__newindex(name, value)
+      called = true
+      self.secret[name] = value
+    end
+    function A:bar()
+      return 3
+    end
+    local a = A()
+    tester:assert(not called)
+    a['foo'] = 1
+    tester:assert(called)
+    tester:assert(a.foo == nil)
+    tester:assert(a:bar() == 3)
+    tester:assert(a.baz == nil)
+    tester:assert(a.secret.foo == 1)
+    a['foo'] = 2
+    tester:assert(a.secret.foo == 2)
+    tester:assert(a.foo == nil)
   end
 
   function tests.toString()
@@ -310,13 +349,11 @@ function test_common.generateTests(tester)
     end
     local a = A()
     tester:asserteq(tostring(a), "foo", "tostring does not work")
-    classic.deregisterAllClasses()
   end
 
   function tests.detectBadInit()
     tester:assertErrorPattern(function() definitions.BadInit() end,
                               "_init", "should detect constructor mistake")
-    classic.deregisterAllClasses()
   end
 
   function tests.classAttributes()
@@ -346,7 +383,6 @@ function test_common.generateTests(tester)
       A.name = "foo"
     end, "naming conflict", "check name clash with global class method")
 
-    classic.deregisterAllClasses()
   end
 
   function tests.staticMethods()
@@ -385,7 +421,6 @@ function test_common.generateTests(tester)
       end
     end, "forbidden", "check name clash with 'static'")
 
-    classic.deregisterAllClasses()
   end
 
   function tests.withDoFile()
@@ -398,7 +433,6 @@ function test_common.generateTests(tester)
     local doFileTestClass = dofile(file)
     doFileTestClass(1)
 
-    classic.deregisterAllClasses()
   end
 
   function tests.badParents()
@@ -411,7 +445,6 @@ function test_common.generateTests(tester)
           local A = classic.class("B", false)
         end, "parent", "boolean false as parent should fail")
 
-    classic.deregisterAllClasses()
   end
 
   function tests.abstract()
@@ -419,7 +452,6 @@ function test_common.generateTests(tester)
     tester:assert(not A:abstract(), "class should not be abstract")
     A:mustHave("missingMethod")
     tester:assert(A:abstract(), "class should be abstract")
-    classic.deregisterAllClasses()
   end
 
   function tests.mustHave()
@@ -432,7 +464,6 @@ function test_common.generateTests(tester)
     tester:assertNoError(function() A() end, "should not error")
     tester:assertErrorPattern(function() A:mustHave() end, "string")
 
-    classic.deregisterAllClasses()
   end
 
 
@@ -453,7 +484,6 @@ function test_common.generateTests(tester)
     tester:asserteq(a ^ 0, randomMap['pow'], 'failed to override __pow')
     tester:asserteq(-a, randomMap['unm'], 'failed to override __unm')
     tester:asserteq(a .. 0, randomMap['concat'], 'failed to override __concat')
-    classic.deregisterAllClasses()
   end
 
   function tests.callbacks()
@@ -475,7 +505,6 @@ function test_common.generateTests(tester)
     tester:asserteq(gotAttribute, "myAttr")
     function MyClass:myMethod() end
     tester:asserteq(gotMethod, "myMethod")
-    classic.deregisterAllClasses()
   end
 
   function tests.final()
@@ -530,7 +559,6 @@ function test_common.generateTests(tester)
     tester:assertErrorPattern(function() D:final() end, "string",
                               "call final with no arg")
 
-    classic.deregisterAllClasses()
   end
 
   return tests
