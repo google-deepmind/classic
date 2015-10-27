@@ -3,6 +3,7 @@ local classic = assert(classic,
                        "test_common assumes classic has already been required")
 
 local definitions = require 'classic.tests.class.definitions'
+local totem = require 'totem'
 local utils = require 'classic.tests.class.utils'
 
 -- Since Totem may require 'sys' when the tests are run, and this declares a
@@ -559,6 +560,28 @@ function test_common.generateTests(tester)
     tester:assertErrorPattern(function() D:final() end, "string",
                               "call final with no arg")
 
+  end
+
+  function tests.badSuper()
+    local A = classic.class("A")
+    function A:_init()
+      self.x = 0
+    end
+    function A:noarg()
+      return true
+    end
+    function A:process(x)
+      self.x = x
+      return self.x
+    end
+    local B, Super = classic.class("B", A)
+    function B:process(x)
+      local y = Super:process(x)
+      return 2 * y
+    end
+    local b = B()
+    tester:assertErrorPattern(
+        function() b:process(3) end, 'Misuse of Super', 'check bad super call')
   end
 
   return tests

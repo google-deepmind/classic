@@ -215,17 +215,22 @@ function Class:super()
                self:name(), " has no parent!"}, 2)
   end
   local parentProxy = {}
-  setmetatable(parentProxy, {
-    __index = function(t, key)
-      local method = rawget(parent._methods, key)
-      if method then
-        return method
+  for name, method in pairs(parent._methods) do
+    parentProxy[name] = function(arg1, ...)
+      if arg1 == parentProxy then
+        error("Misuse of Super object! Do not call it with a colon. " ..
+              "Correct way: Super." .. name .. "(self, ...)", 2)
       end
+      return method(arg1, ...)
+    end
+  end
+  setmetatable(parentProxy, {
+    __index = function(tbl, key)
       error(table.concat{
             "Trying to call method '", key, "' via super(), but the parent ",
             "class (", parent:name(), ") has no such method."}, 2)
     end,
-    __newindex = function(t, key, value)
+    __newindex = function(tbl, key, value)
       error(table.concat{"Trying to assign to a value via super(),",
             " but this is not allowed!"}, 2)
     end,
