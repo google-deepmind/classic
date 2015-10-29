@@ -5,7 +5,6 @@ local torch = require 'torch'
 
 Call `classic.addCallback()` if you want to be notified when one of these
 happens.
-
 ]]
 classic.events = {
     -- A new class is initialized. Callback is passed the name.
@@ -49,9 +48,9 @@ instance, you might want to log particular events, for debugging, or enforce a
 certain way of naming classes.
 
 Arguments:
+
 * `event` - an event ID, from the `classic.events` table.
 * `func` - a callback function. The arguments it is passed depend on the event.
-
 ]]
 function classic.addCallback(event, func)
   assert(event and type(event) == 'number',
@@ -72,7 +71,6 @@ Arguments:
 
 * `event` - an event ID, from the `classic.events` table.
 * `...` - additional arguments to be passed to the callbacks.
-
 ]]
 function classic._notify(event, ...)
   if classic._callbacks[event] then
@@ -92,7 +90,6 @@ Arguments:
 * `name` - a string containing the name of the module.
 
 Returns: `module` - a Module object.
-
 ]]
 function classic.module(name)
   if name == nil then
@@ -119,7 +116,6 @@ Returns:
 
 1. `class` - a Class object, upon which you can define functions
 2. `super` - an object for calling methods of the parent class
-
 ]]
 function classic.class(name, parent)
   if name == nil then
@@ -158,7 +154,6 @@ Arguments:
 * `data` - some Lua data; not nil.
 
 Returns: boolean; true if the data is a classic object.
-
 ]]
 function classic.isObject(object)
   if object == nil then
@@ -186,7 +181,6 @@ This can be used to catch problems with typos in object attribute names.
 Arguments:
 
 * `object` - an instance of a classic class.
-
 ]]
 function classic.strict(object, ...)
   if select('#', ...) ~= 0 or object == classic then
@@ -229,7 +223,6 @@ Arguments:
 * `name` - string; full name of the desired class.
 
 Returns: classic.Class object.
-
 ]]
 function classic.getClass(name)
   if type(name) ~= 'string' then
@@ -249,7 +242,6 @@ This is mainly useful for testing.
 Arguments:
 
 * `name` - full name of the class to be removed.
-
 ]]
 function classic.deregisterClass(name)
   if type(name) ~= 'string' then
@@ -269,7 +261,6 @@ Arguments:
 * `obj` - some Lua Data
 
 Returns: boolean; true if the object is a classic class.
-
 ]]
 function classic.isClass(obj)
   if not type(obj) == "table" then
@@ -289,7 +280,6 @@ Arguments:
 * `obj` - some Lua Data
 
 Returns: boolean
-
 ]]
 function classic.isModule(obj)
   if not type(obj) == 'table' then
@@ -305,7 +295,6 @@ end
 --[[ Empty classic's table of loaded classes.
 
 This is mainly useful for testing.
-
 ]]
 function classic.deregisterAllClasses()
   classic._registry = {}
@@ -323,7 +312,6 @@ Arguments:
 * `level` - indentation level to begin at (default: 0)
 
 Returns: none (output is printed to stdout)
-
 ]]
 function classic.list(obj, level)
   level = level or 0
@@ -436,7 +424,6 @@ behaves like normal, except that if you try to define its methods differently
 from the original, it will throw an error.
 
 This behaviour may be subject to change in the future.
-
 ]]
 function classic._dummyClass(klass)
 
