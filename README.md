@@ -117,7 +117,7 @@ print(a.thisAttributHasATypo)
 
 You can store data on class objects - for example, if you want to share
 something between all instances of that class. Note only that you cannot store a
-function as a class attribute, as that is indistinguisable from defining an
+function as a class attribute, as that is indistinguishable from defining an
 instance method.
 
 ```lua
