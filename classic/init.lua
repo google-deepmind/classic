@@ -35,6 +35,11 @@ classic.events = {
 
     -- classic.torch is enabled. Callback is not passed anything.
     CLASSIC_TORCH_ENABLED = 8,
+
+    -- A class is loaded whose name does not match the name it was loaded
+    -- with. Callback is passed the class's actual name and the name it was
+    -- loaded with.
+    CLASS_REQUIRE_NAME_MISMATCH = 9
 }
 setmetatable(classic.events, {
     __index = function(t, k) error(k .. " is not a valid classic event!") end})
@@ -342,8 +347,10 @@ function classic._loadClass(name)
   assert(classic.isClass(value) or torch.typename(value),
          "Loaded " .. name .. " but it is not a class")
   local klass = value
-  assert(klass:name() == name, "Loaded a class but it has the name "
-         .. klass:name() .. " instead of the expected " .. name)
+  if klass:name() ~= name then
+    classic._notify(
+        classic.events.CLASS_REQUIRE_NAME_MISMATCH, klass:name(), name)
+  end
   return klass
 end
 

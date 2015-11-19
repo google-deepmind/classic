@@ -491,21 +491,34 @@ function test_common.generateTests(tester)
     local gotName = nil
     local gotAttribute = nil
     local gotMethod = nil
+    local gotName1, gotName2 = nil, nil
     local function initCallback(name) gotName = name end
     local function attributeCallback(klass, name) gotAttribute = name end
     local function methodCallback(klass, name) gotMethod = name end
+    local function badNameCallback(name1, name2)
+      gotName1, gotName2 = name1, name2
+    end
     classic.addCallback(classic.events.CLASS_INIT, initCallback)
     classic.addCallback(classic.events.CLASS_SET_ATTRIBUTE, attributeCallback)
     classic.addCallback(classic.events.CLASS_DEFINE_METHOD, methodCallback)
+    classic.addCallback(classic.events.CLASS_REQUIRE_NAME_MISMATCH,
+                        badNameCallback)
     tester:asserteq(gotName, nil)
     tester:asserteq(gotAttribute, nil)
     tester:asserteq(gotMethod, nil)
+    tester:asserteq(gotName1, nil)
+    tester:asserteq(gotName2, nil)
     local MyClass = classic.class("MyClass")
     tester:asserteq(gotName, "MyClass")
     MyClass.myAttr = 2
     tester:asserteq(gotAttribute, "myAttr")
     function MyClass:myMethod() end
     tester:asserteq(gotMethod, "myMethod")
+    package.loaded["NotMyClass"] = MyClass
+    local Class = classic.getClass("NotMyClass")
+    tester:asserteq(gotName1, "MyClass")
+    tester:asserteq(gotName2, "NotMyClass")
+    package.loaded["NotMyClass"] = nil
   end
 
   function tests.final()
