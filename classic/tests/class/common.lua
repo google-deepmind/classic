@@ -343,6 +343,22 @@ function test_common.generateTests(tester)
     tester:assert(a.foo == nil)
   end
 
+  function tests.eq()
+    local A = classic.class("A")
+    function A:_init(x)
+      self.contents = x
+    end
+    local foo = A(5)
+    local bar = A(5)
+    tester:asserteq(foo == bar, false)
+    function A:__eq(other)
+      return self.contents == other.contents
+    end
+    foo = A(5)
+    bar = A(5)
+    tester:asserteq(foo == bar, true)
+  end
+
   function tests.toString()
     local A = classic.class("A")
     function A:__tostring()

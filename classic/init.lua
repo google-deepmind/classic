@@ -413,6 +413,7 @@ function classic._init()
       __sub = klass._methods.__sub,
       __tostring = klass._methods.__tostring,
       __unm = klass._methods.__unm,
+      __eq = klass._methods.__eq,
     })
     return obj
   end

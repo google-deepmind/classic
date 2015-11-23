@@ -116,10 +116,18 @@ if not torch.Object then
     end
     return toString(self)
   end
-  for _, meta in ipairs{'add', 'sub', 'mul', 'div', 'pow', 'unm', 'concat'} do
-    Object['__' .. meta] = function(self)
+  local metaStrings = {'add', 'sub', 'mul', 'div', 'pow', 'unm', 'concat', 'eq'}
+  for _, meta in ipairs(metaStrings) do
+    local defaultMetaFunc = Object['__' .. meta]
+    Object['__' .. meta] = function(self, ...)
       local klass = assert(rawget(self, '_class'), "missing _class")
-      return rawget(klass, '_methods')['__' .. meta](self)
+      local methods = assert(
+        rawget(klass, '_methods'),
+        "class has no _methods table."
+      )
+      local metaMethod = methods['__' .. meta]
+      if metaMethod then return metaMethod(self, ...) end
+      return defaultMetaFunc(self, ...)
     end
   end
 end
