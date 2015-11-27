@@ -17,6 +17,9 @@ function definitions.basicClass()
   function A:getX()
     return self.x
   end
+  function A:_privateMethod()
+    return self.x
+  end
   return A
 end
 

@@ -181,6 +181,12 @@ function test_common.generateTests(tester)
     local a = A("x")
     local methods = A:methods()
     tester:assertne(methods['getX'], nil, "methods() did not work")
+    tester:asserteq(methods['_privateMethod'], nil,
+                    "methods() should not return private methods")
+    local allMethods = A:allMethods()
+    tester:assertne(allMethods['getX'], nil, "allMethods() did not work")
+    tester:assertne(allMethods['_privateMethod'], nil,
+                    "allMethods() did not work")
   end
 
   function tests.strict()

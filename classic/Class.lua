@@ -282,7 +282,7 @@ function Class:mustHave(methodName)
   table.insert(requiredMethods, methodName)
 end
 
---[[ Mark a method as 'final'.
+--[[ Marks a method as 'final'.
 
 This can be used during class definition to indicate that a particular method
 should *not* be overridden by subclasses, or in classes that include this class
@@ -310,7 +310,7 @@ function Class:final(methodName)
   finalMethods[methodName] = true
 end
 
---[[ Check whether a given method name is marked as 'final'.
+--[[ Checks whether a given method name is marked as 'final'.
 
 Arguments:
 
@@ -327,7 +327,7 @@ function Class:methodIsFinal(methodName)
 end
 
 
---[[ Return a table of methods for this class.
+--[[ Returns a table of methods for this class (excluding private methods).
 
 This can be used to iterate over all methods of a class, or to call a method of
 the class on some other object, for example.
@@ -343,6 +343,27 @@ function Class:methods()
   for name, func in pairs(self._methods) do
     if type(func) == 'function' and string.sub(name, 1, 1) ~= "_"
         and Class[name] == nil then
+      methods[name] = func
+    end
+  end
+  return methods
+end
+
+--[[ Returns a table of methods for this class, including private methods.
+
+This can be used to iterate over all methods of a class, or to call a method of
+the class on some other object, for example.
+
+Arguments: none.
+
+Returns: Lua table, mapping from method name to function.
+
+]]
+function Class:allMethods()
+  checkSelf(self, 'methods')
+  local methods = {}
+  for name, func in pairs(self._methods) do
+    if type(func) == 'function' and Class[name] == nil then
       methods[name] = func
     end
   end
@@ -442,7 +463,7 @@ function Class:include(klass)
 
 end
 
---[[ Check whether the class is abstract.
+--[[ Checks whether the class is abstract.
 
 In other words, does it have any methods marked 'mustHave' that are not
 implemented.
